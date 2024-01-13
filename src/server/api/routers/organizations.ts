@@ -7,12 +7,13 @@ import {
 } from "~/server/api/trpc";
 import { getServerAuthSession } from "~/server/auth";
 
+import { Organization } from "@prisma/client";
+
 export const orgRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ name: z.string(), slug: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const org = ctx.db.organization.create({
+      const org: Organization[] = ctx.db.organization.create({
         data: {
           id: "org_" + nanoid(),
           slug: input.slug,
