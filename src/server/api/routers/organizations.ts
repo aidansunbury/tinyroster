@@ -1,19 +1,16 @@
-import { nanoid } from "nanoid";
-import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "~/server/api/trpc";
-import { getServerAuthSession } from "~/server/auth";
+import { nanoid } from 'nanoid';
+import { z } from 'zod';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '~/server/api/trpc';
+import { getServerAuthSession } from '~/server/auth';
 
-import { Organization } from "@prisma/client";
+import { Organization } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 
 export const orgRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ name: z.string(), slug: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const org: Organization[] = ctx.db.organization.create({
+      const org = await ctx.db.organization.create({
         data: {
           id: "org_" + nanoid(),
           slug: input.slug,
@@ -21,9 +18,18 @@ export const orgRouter = createTRPCRouter({
           ownerId: ctx.session.user.id,
         },
       });
+
+      // Throw a trpc error if the org failed to create
+      if (!org) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Failed to create organization, likely due to a duplicate slug.",
+        });
+      }
       return org;
     }),
-  getOrgs: protectedProcedure.query(async ({ ctx }) => {
+  getUserOrgs: protectedProcedure.query(async ({ ctx }) => {
     const orgs = await ctx.db.organization.findMany({
       where: { ownerId: ctx.session.user.id },
     });
