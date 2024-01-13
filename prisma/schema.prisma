@@ -13,7 +13,7 @@ datasource db {
 
 // The user "owns" the account and can have multiple accounts
 model User {
-    id            String    @id
+    id            String    @id @default(cuid()) // no prefix, as it is default
     name          String    @default("New User")
     slug          String    @default("new-user") // does not have to be unique to the entire database, just for all users in the same organization
     email         String?   @unique
@@ -76,7 +76,7 @@ model VerificationToken {
 }
 
 model Organization {
-    id     String  @id @default(cuid())
+    id     String  @id // Prefix org_
     slug   String  @unique
     name   String
     roles  Role[]  @relation("Role's Organization")
@@ -86,7 +86,7 @@ model Organization {
 
 // Any meeting or event that could be put on a calendar
 model Event {
-    id             String       @id @default(cuid())
+    id             String       @id // Prefix event_
     name           String
     location       String
     organization   Organization @relation("Event's Organization", fields: [organizationId], references: [id])
@@ -96,7 +96,7 @@ model Event {
 
 // Any grouping of members that are treated as a unit and have different permissions
 model Team {
-    id             String       @id @default(cuid())
+    id             String       @id // Prefix team_
     name           String
     organization   Organization @relation("Team's Organization", fields: [organizationId], references: [id])
     organizationId String
@@ -106,7 +106,7 @@ model Team {
 
 // Roles must be block scoped to an organization, therefore they can not be stored directly on the user
 model Role {
-    id             String       @id @default(cuid())
+    id             String       @id //Prefix role_
     name           String
     organization   Organization @relation("Role's Organization", fields: [organizationId], references: [id])
     organizationId String
