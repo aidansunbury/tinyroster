@@ -6,16 +6,30 @@ generator client {
 }
 
 datasource db {
-    provider = "sqlite"
-    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-    // Further reading:
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
-    url      = env("DATABASE_URL")
+    provider     = "cockroachdb"
+    url          = env("DATABASE_URL")
+    relationMode = "prisma"
 }
 
+// The user "owns" the account and can have multiple accounts
+model User {
+    id            String    @id
+    name          String    @default("New User")
+    slug          String    @default("new-user") // does not have to be unique to the entire database, just for all users in the same organization
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String? // Profile image URL
+    accounts      Account[]
+    sessions      Session[]
+    posts         Post[]
+    profileData   Json? // All profile fields can be configured by the organization admin
+    roles         Role[]    @relation("User's Roles")
+    teams         Team[]    @relation("User's Teams")
+}
+
+// todo delete
 model Post {
-    id        Int      @id @default(autoincrement())
+    id        String   @id @default(cuid())
     name      String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -53,21 +67,48 @@ model Session {
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
-    posts         Post[]
-}
-
 model VerificationToken {
     identifier String
     token      String   @unique
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Organization {
+    id     String  @id @default(cuid())
+    slug   String  @unique
+    name   String
+    roles  Role[]  @relation("Role's Organization")
+    teams  Team[]  @relation("Team's Organization")
+    events Event[] @relation("Event's Organization")
+}
+
+// Any meeting or event that could be put on a calendar
+model Event {
+    id             String       @id @default(cuid())
+    name           String
+    location       String
+    organization   Organization @relation("Event's Organization", fields: [organizationId], references: [id])
+    organizationId String
+    teams          Team[]       @relation("Event's Teams") // Events can optionally be tied to a specific team, that team must be a part of the same organization
+}
+
+// Any grouping of members that are treated as a unit and have different permissions
+model Team {
+    id             String       @id @default(cuid())
+    name           String
+    organization   Organization @relation("Team's Organization", fields: [organizationId], references: [id])
+    organizationId String
+    users          User[]       @relation("User's Teams")
+    events         Event[]      @relation("Event's Teams")
+}
+
+// Roles must be block scoped to an organization, therefore they can not be stored directly on the user
+model Role {
+    id             String       @id @default(cuid())
+    name           String
+    organization   Organization @relation("Role's Organization", fields: [organizationId], references: [id])
+    organizationId String
+    users          User[]       @relation("User's Roles")
 }

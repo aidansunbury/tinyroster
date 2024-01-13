@@ -1,10 +1,10 @@
 import { z } from "zod";
-
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
+import { getServerAuthSession } from "~/server/auth";
 
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
@@ -20,7 +20,6 @@ export const postRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // simulate a slow db call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       return ctx.db.post.create({
         data: {
           name: input.name,
