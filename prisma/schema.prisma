@@ -13,18 +13,23 @@ datasource db {
 
 // The user "owns" the account and can have multiple accounts
 model User {
-    id            String    @id @default(cuid()) // no prefix, as it is default
-    name          String    @default("New User")
-    slug          String    @default("new-user") // does not have to be unique to the entire database, just for all users in the same organization
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String? // Profile image URL
-    accounts      Account[]
-    sessions      Session[]
-    posts         Post[]
-    profileData   Json? // All profile fields can be configured by the organization admin
-    roles         Role[]    @relation("User's Roles")
-    teams         Team[]    @relation("User's Teams")
+    id                    String         @id @default(cuid()) // no prefix, as it is default
+    name                  String         @default("New User")
+    slug                  String         @default("new-user") // does not have to be unique to the entire database, just for all users in the same organization
+    email                 String?        @unique
+    emailVerified         DateTime?
+    image                 String? // Profile image URL
+    accounts              Account[]
+    sessions              Session[]
+    posts                 Post[]
+    profileData           Json? // All profile fields can be configured by the organization admin
+    roles                 Role[]         @relation("User's Roles")
+    teams                 Team[]         @relation("User's Teams")
+    organizations         Organization[] @relation("Organization's Users")
+    defaultOrganization   Organization?  @relation("User's Default Organization", fields: [defaultOrganizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    defaultOrganizationId String?
+    owns                  Organization[] @relation("Organization's Owner")
+    registrations         Registration[] @relation("User Registrations")
 }
 
 // todo delete
@@ -47,18 +52,19 @@ model Account {
     type              String
     provider          String
     providerAccountId String
-    refresh_token     String? // @db.Text
-    access_token      String? // @db.Text
+    refresh_token     String?
+    access_token      String?
     expires_at        Int?
     token_type        String?
     scope             String?
-    id_token          String? // @db.Text
+    id_token          String?
     session_state     String?
     user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([provider, providerAccountId])
 }
 
+// Necessary for Next auth
 model Session {
     id           String   @id @default(cuid())
     sessionToken String   @unique
@@ -67,6 +73,7 @@ model Session {
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Necessary for Next auth
 model VerificationToken {
     identifier String
     token      String   @unique
@@ -76,22 +83,40 @@ model VerificationToken {
 }
 
 model Organization {
-    id     String  @id // Prefix org_
-    slug   String  @unique
-    name   String
-    roles  Role[]  @relation("Role's Organization")
-    teams  Team[]  @relation("Team's Organization")
-    events Event[] @relation("Event's Organization")
+    id            String  @id // Prefix org_
+    slug          String  @unique
+    name          String
+    roles         Role[]  @relation("Role's Organization")
+    teams         Team[]  @relation("Team's Organization")
+    events        Event[] @relation("Event's Organization")
+    users         User[]  @relation("Organization's Users")
+    usersDefaults User[]  @relation("User's Default Organization")
+    owner         User    @relation("Organization's Owner", fields: [ownerId], references: [id]) // Every organization must have a single owner, who can delete the organization or transfer ownership
+    ownerId       String
+    accessCode    String? // If an access code is set, users must enter it to join the organization (can be make more complex later)
+    profileSchema Json? // All profile fields can be configured by the organization admin
 }
 
 // Any meeting or event that could be put on a calendar
 model Event {
-    id             String       @id // Prefix event_
-    name           String
-    location       String
-    organization   Organization @relation("Event's Organization", fields: [organizationId], references: [id])
-    organizationId String
-    teams          Team[]       @relation("Event's Teams") // Events can optionally be tied to a specific team, that team must be a part of the same organization
+    id                 String         @id // Prefix event_
+    name               String
+    location           String
+    organization       Organization   @relation("Event's Organization", fields: [organizationId], references: [id])
+    organizationId     String
+    registrations      Registration[] @relation("Event Registrations")
+    registrationSchema Json? // Registration options, such as max RSVPs are configurable
+}
+
+// A registration can render any status in relation to an event, e.g. "Attending", "Not Attending", "Absent", "Present", "Not Interested"
+// The status can indicate a future intention with reguards to the event or a past action, e.g. "Attending" or "Present"
+model Registration {
+    id        String   @id // Prefix registration_
+    name      String // Name of the registration, e.g. "Attending", "Not Attending", "Maybe Attending", "Not Interested", "Master of Ceremonies"
+    event     Event    @relation("Event Registrations", fields: [eventId], references: [id])
+    eventId   String
+    users     User[]   @relation("User Registrations") // Many users can share the same status, e.g. "Attending"
+    createdAt DateTime @default(now())
 }
 
 // Any grouping of members that are treated as a unit and have different permissions
@@ -101,13 +126,12 @@ model Team {
     organization   Organization @relation("Team's Organization", fields: [organizationId], references: [id])
     organizationId String
     users          User[]       @relation("User's Teams")
-    events         Event[]      @relation("Event's Teams")
 }
 
 // Roles must be block scoped to an organization, therefore they can not be stored directly on the user
 model Role {
     id             String       @id //Prefix role_
-    name           String
+    name           String // Name of the role, e.g. "Admin", "Member", "Owner"
     organization   Organization @relation("Role's Organization", fields: [organizationId], references: [id])
     organizationId String
     users          User[]       @relation("User's Roles")
