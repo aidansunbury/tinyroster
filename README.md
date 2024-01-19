@@ -1,6 +1,6 @@
 # tinyroster
 
-A simple AMS service for student organizations to manage their members and events.
+A simple AMS service for student organizations to manage their members and events. Everything you need and nothing you don't.
 
 # Development notes
 
