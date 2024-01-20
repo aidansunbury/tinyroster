@@ -1,10 +1,14 @@
-import { nanoid } from 'nanoid';
-import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure, publicProcedure } from '~/server/api/trpc';
-import { getServerAuthSession } from '~/server/auth';
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
+import { getServerAuthSession } from "~/server/auth";
 
-import { Organization } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
+import { Organization } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 export const orgRouter = createTRPCRouter({
   create: protectedProcedure
@@ -16,6 +20,11 @@ export const orgRouter = createTRPCRouter({
           slug: input.slug,
           name: input.name,
           ownerId: ctx.session.user.id,
+          users: {
+            connect: {
+              id: ctx.session.user.id,
+            },
+          },
         },
       });
 

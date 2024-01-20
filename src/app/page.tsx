@@ -1,12 +1,10 @@
-import Link from "next/link";
-import SignInButton from "~/components/auth/SignInButton";
-import SignOutButton from "~/components/auth/SignOutButton";
-import { CreatePost } from "~/components/create-post";
-import { getServerAuthSession } from "~/server/auth";
-import { api } from "~/trpc/server";
+import Link from 'next/link';
+import SignInButton from '~/components/auth/SignInButton';
+import SignOutButton from '~/components/auth/SignOutButton';
+import { getServerAuthSession } from '~/server/auth';
+import { api } from '~/trpc/server';
 
 export default async function Home() {
-  // const hello = await api.post.hello.query({ text: "from tRPC" });
   const session = await getServerAuthSession();
 
   return (
@@ -20,30 +18,10 @@ export default async function Home() {
         </p>
         <div className="flex flex-col items-center gap-2">
           <div className="flex flex-col items-center justify-center gap-4">
-            {session?.user.name}
             {session ? <SignOutButton /> : <SignInButton />}
           </div>
         </div>
       </div>
     </main>
-  );
-}
-
-async function CrudShowcase() {
-  const session = await getServerAuthSession();
-  if (!session?.user) return null;
-
-  const latestPost = await api.post.getLatest.query();
-
-  return (
-    <div className="w-full max-w-xs">
-      {latestPost ? (
-        <p className="truncate">Your most recent post: {latestPost.name}</p>
-      ) : (
-        <p>You have no posts yet.</p>
-      )}
-
-      <CreatePost />
-    </div>
   );
 }
