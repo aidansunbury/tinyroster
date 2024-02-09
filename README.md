@@ -11,3 +11,7 @@ Visit /api/panel to view a fully functional API test panel generated with [trpc-
 ## Calling the API
 
 All api functions are exported both from /trpc/react and /trpc/server. Any code called on the frontend should be imported from /trpc/react, and any code called on the backend should be imported from /trpc/server.
+
+## Dependencies
+
+Do not upgrade to react query v5. It messed everything up last time you tried.

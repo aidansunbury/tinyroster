@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import React from "react";
 import {
   NavigationMenu,
@@ -8,6 +9,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
   NavigationMenuViewport,
 } from "~/components/ui/navigation-menu";
 
@@ -25,14 +27,20 @@ export default function NavBar() {
         ></img>
       </div>
       <NavigationMenu className="border">
-        <NavigationMenuList>
-          <NavigationMenuItem>
-            <NavigationMenuTrigger>Item One</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <NavigationMenuLink>Link</NavigationMenuLink>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-        </NavigationMenuList>
+        <NavigationMenuItem>
+          <Link href="/admin" legacyBehavior passHref>
+            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+              Admin
+            </NavigationMenuLink>
+          </Link>
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <Link href="/roster" legacyBehavior passHref>
+            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+              Roster
+            </NavigationMenuLink>
+          </Link>
+        </NavigationMenuItem>
       </NavigationMenu>
       <UserAvatar />
     </div>

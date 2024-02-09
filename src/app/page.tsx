@@ -1,12 +1,12 @@
-import Link from 'next/link';
-import SignInButton from '~/components/auth/SignInButton';
-import SignOutButton from '~/components/auth/SignOutButton';
-import { getServerAuthSession } from '~/server/auth';
-import { api } from '~/trpc/server';
+import Link from "next/link";
+import SignInButton from "~/components/auth/SignInButton";
+import SignOutButton from "~/components/auth/SignOutButton";
+import { Button } from "~/components/ui/button";
+import { getServerAuthSession } from "~/server/auth";
+import { api } from "~/trpc/server";
 
 export default async function Home() {
   const session = await getServerAuthSession();
-
   return (
     <main className="flex min-h-screen flex-col items-center justify-center">
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
@@ -18,6 +18,11 @@ export default async function Home() {
         </p>
         <div className="flex flex-col items-center gap-2">
           <div className="flex flex-col items-center justify-center gap-4">
+            {session && (
+              <Button>
+                <Link href="/home">My Organizations</Link>
+              </Button>
+            )}
             {session ? <SignOutButton /> : <SignInButton />}
           </div>
         </div>

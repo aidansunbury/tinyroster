@@ -44,4 +44,30 @@ export const orgRouter = createTRPCRouter({
     });
     return orgs;
   }),
+  // get the organization by the slug, only returns the organization if the user is a member
+  getOrganization: protectedProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input, ctx }) => {
+      // get the organization by the slug, include the users where the user id is the current user
+      const organization = await ctx.db.organization.findUnique({
+        where: { slug: input.slug },
+        include: { users: { where: { id: ctx.session.user.id } } },
+      });
+
+      if (!organization) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Organization not found",
+        });
+      }
+
+      if (!organization.users.length) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a member of this organization",
+        });
+      }
+
+      return organization;
+    }),
 });
