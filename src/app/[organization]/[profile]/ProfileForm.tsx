@@ -13,7 +13,6 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { Separator } from "~/components/ui/separator";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@prisma/client";
@@ -23,6 +22,7 @@ const FormSchema = z.object({
     message: "Username must be at least 2 characters.",
   }),
   slug: z.string(),
+  email: z.string().email(),
 });
 
 export function ProfileForm({ user }: { user: User }) {
@@ -31,6 +31,7 @@ export function ProfileForm({ user }: { user: User }) {
     defaultValues: {
       name: user.name,
       slug: user.slug,
+      email: user.email,
     },
   });
 
@@ -47,9 +48,39 @@ export function ProfileForm({ user }: { user: User }) {
           render={({ field }) => (
             <FormItem>
               <div className="flex flex-row items-center rounded-md border bg-slate-100">
-                <FormLabel className="mx-2">Username</FormLabel>
+                <FormLabel className="mx-2 w-20">Username</FormLabel>
                 <FormControl className="rounded-none border-y-0 border-e-0 outline-none">
                   <Input placeholder="shadcn" {...field} />
+                </FormControl>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="slug"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex flex-row items-center rounded-md border bg-slate-100">
+                <FormLabel className="mx-2 w-20">slug</FormLabel>
+                <FormControl className="rounded-none border-y-0 border-e-0 outline-none">
+                  <Input placeholder="shadcn" {...field} />
+                </FormControl>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex flex-row items-center rounded-md border bg-slate-100">
+                <FormLabel className="mx-2 w-20">Email</FormLabel>
+                <FormControl className="rounded-none border-y-0 border-e-0 outline-none">
+                  <Input disabled={true} placeholder="shadcn" {...field} />
                 </FormControl>
               </div>
               <FormMessage />
