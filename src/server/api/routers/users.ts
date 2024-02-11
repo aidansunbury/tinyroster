@@ -42,3 +42,11 @@ export const userRouter = createTRPCRouter({
       return user;
     }),
 });
+
+const thing = {
+  id: "test",
+  name: "phone number",
+  type: "string",
+  required: false,
+  options: [],
+};

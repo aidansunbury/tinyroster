@@ -14,11 +14,15 @@ export default async function Profile({
     organizationSlug: params.organization,
   });
 
+  const schema = await api.org.getOrgProfileSchema.query({
+    slug: params.organization,
+  });
+
   return (
-    <div className="flex w-full justify-center border">
-      <div className="w-8/12 border">
+    <div className="flex w-full justify-center">
+      <div className="w-8/12 space-y-3 first-line:border">
         <h1 className="text-3xl">{user.name}</h1>
-        <ProfileForm user={user} />
+        <ProfileForm user={user} profileSchema={schema} />
       </div>
     </div>
   );

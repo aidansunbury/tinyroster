@@ -1,4 +1,4 @@
-import * as z from "zod";
+import { z } from "zod";
 
 const urlFriendlyRegex = /^[a-zA-Z0-9-_.]+$/;
 

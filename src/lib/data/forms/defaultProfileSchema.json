@@ -1,0 +1,9 @@
+[
+  {
+    "id": "phone",
+    "name": "phone number",
+    "type": "text",
+    "required": false,
+    "options": []
+  }
+]

@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { api } from "~/trpc/react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@prisma/client";
@@ -25,14 +26,26 @@ const FormSchema = z.object({
   email: z.string().email(),
 });
 
-export function ProfileForm({ user }: { user: User }) {
+export function ProfileForm({
+  user,
+  profileSchema,
+}: {
+  user: User;
+  profileSchema: any;
+}) {
+  const defaults = {
+    name: user.name,
+    slug: user.slug,
+    email: user.email,
+  };
+
+  for (const field of profileSchema.schema) {
+    defaults[field.name] = "";
+  }
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
-      name: user.name,
-      slug: user.slug,
-      email: user.email,
-    },
+    defaultValues: defaults,
   });
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
@@ -41,7 +54,7 @@ export function ProfileForm({ user }: { user: User }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-3">
         <FormField
           control={form.control}
           name="name"
@@ -63,7 +76,7 @@ export function ProfileForm({ user }: { user: User }) {
           render={({ field }) => (
             <FormItem>
               <div className="flex flex-row items-center rounded-md border bg-slate-100">
-                <FormLabel className="mx-2 w-20">slug</FormLabel>
+                <FormLabel className="mx-2 w-20">URL Slug</FormLabel>
                 <FormControl className="rounded-none border-y-0 border-e-0 outline-none">
                   <Input placeholder="shadcn" {...field} />
                 </FormControl>
@@ -87,8 +100,29 @@ export function ProfileForm({ user }: { user: User }) {
             </FormItem>
           )}
         />
+        {profileSchema.schema.map((field: any) => {
+          return (
+            <FormField
+              control={form.control}
+              name={field.name}
+              key={field.id}
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex flex-row items-center rounded-md border bg-slate-100">
+                    <FormLabel className="mx-2 w-20">{field.name}</FormLabel>
+                    <FormControl className="rounded-none border-y-0 border-e-0 outline-none">
+                      <Input placeholder={field.name} {...field} />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          );
+        })}
         {form.formState.isDirty && <Button type="submit">Submit</Button>}
       </form>
+      <div>{JSON.stringify(profileSchema)}</div>
     </Form>
   );
 }

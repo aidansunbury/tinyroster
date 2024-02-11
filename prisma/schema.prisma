@@ -30,6 +30,7 @@ model User {
     defaultOrganizationId String?
     owns                  Organization[] @relation("Organization's Owner")
     registrations         Registration[] @relation("User Registrations")
+    formEntries           FormEntry[]    @relation("Form Entries")
 }
 
 // todo delete
@@ -83,19 +84,18 @@ model VerificationToken {
 }
 
 model Organization {
-    id              String      @id // Prefix org_
-    slug            String      @unique
-    name            String
-    roles           Role[]      @relation("Role's Organization")
-    teams           Team[]      @relation("Team's Organization")
-    events          Event[]     @relation("Event's Organization")
-    users           User[]      @relation("Organization's Users")
-    usersDefaults   User[]      @relation("User's Default Organization")
-    owner           User        @relation("Organization's Owner", fields: [ownerId], references: [id]) // Every organization must have a single owner, who can delete the organization or transfer ownership
-    ownerId         String
-    accessCode      String? // If an access code is set, users must enter it to join the organization (can be make more complex later)
-    profileSchema   FormSchema? @relation("Organization Profile")
-    profileSchemaId String?     @unique
+    id            String       @id // Prefix org_
+    slug          String       @unique
+    name          String
+    roles         Role[]       @relation("Role's Organization")
+    teams         Team[]       @relation("Team's Organization")
+    events        Event[]      @relation("Event's Organization")
+    users         User[]       @relation("Organization's Users")
+    usersDefaults User[]       @relation("User's Default Organization")
+    owner         User         @relation("Organization's Owner", fields: [ownerId], references: [id]) // Every organization must have a single owner, who can delete the organization or transfer ownership
+    ownerId       String
+    accessCode    String? // If an access code is set, users must enter it to join the organization (can be make more complex later)
+    formSchemas   FormSchema[] @relation("Organization Profile") // Any custom data that an organization wants to collect from its users
 }
 
 // Any meeting or event that could be put on a calendar
@@ -140,33 +140,19 @@ model Role {
 
 // A schema for any form that will be used to collect data
 // All data is stored as arbitrary JSON, so validation will not be enforced by the database
-
-// schema structure
-// Array of fields
-// {
-//     "id": "string", //* Immutable, unique identifier for the field, allow for name to change
-//     "name": "string", //* Display name of the field
-//     "type": "string", //* What input type is it? Options: boolean, datetime, text, select, multiselect
-//     "required": "boolean", //* Is the field required?
-//     "options": "string[]" //* All possible options for select or multiselect, empty array if not applicable
-// }
+// All forms are scoped to an organization
+// The schema structure is an array of objects of type FormSchemaItem in types.ts
 model FormSchema {
-    id                    String        @id //Prefix fs_
-    name                  String
-    schema                Json
-    createdAt             DateTime      @default(now())
-    updatedAt             DateTime      @updatedAt // Only check for schema drifts if the schema is updated more recently than the entry
-    entries               FormEntry[]   @relation("Form Entries")
-    organizationProfile   Organization? @relation("Organization Profile", fields: [organizationProfileId], references: [id])
-    organizationProfileId String?       @unique
+    id             String       @id //Prefix fs_
+    name           String
+    schema         Json
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt // Only check for schema drifts if the schema is updated more recently than the entry
+    entries        FormEntry[]  @relation("Form Entries")
+    organization   Organization @relation("Organization Profile", fields: [organizationId], references: [id])
+    organizationId String       @unique
 }
 
-// data structure
-// Array or entries
-// {
-//     "id": "string", //* Immutable, unique identifier for the entry, must match something in the schema
-//     "data": "json" //* All data for the entry
-// }
 model FormEntry {
     id        String     @id //Prefix fe_
     form      FormSchema @relation("Form Entries", fields: [formId], references: [id])
@@ -174,4 +160,6 @@ model FormEntry {
     data      Json
     createdAt DateTime   @default(now())
     updatedAt DateTime   @updatedAt
+    user      User       @relation("Form Entries", fields: [userId], references: [id])
+    userId    String
 }

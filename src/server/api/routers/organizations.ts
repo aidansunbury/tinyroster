@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { z } from "zod";
+import defaultProfileSchema from "~/lib/data/forms/defaultProfileSchema.json";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -14,6 +15,7 @@ export const orgRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ name: z.string(), slug: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Create the organization with the current user as the owner, and the default profile schema
       const org = await ctx.db.organization.create({
         data: {
           id: "org_" + nanoid(),
@@ -23,6 +25,13 @@ export const orgRouter = createTRPCRouter({
           users: {
             connect: {
               id: ctx.session.user.id,
+            },
+          },
+          formSchemas: {
+            create: {
+              id: "fs_" + nanoid(),
+              name: "profile",
+              schema: defaultProfileSchema,
             },
           },
         },
@@ -51,7 +60,9 @@ export const orgRouter = createTRPCRouter({
       // get the organization by the slug, include the users where the user id is the current user
       const organization = await ctx.db.organization.findUnique({
         where: { slug: input.slug },
-        include: { users: { where: { id: ctx.session.user.id } } },
+        include: {
+          users: { where: { id: ctx.session.user.id } },
+        },
       });
 
       if (!organization) {
@@ -69,5 +80,15 @@ export const orgRouter = createTRPCRouter({
       }
 
       return organization;
+    }),
+
+  getOrgProfileSchema: protectedProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input, ctx }) => {
+      // Find the profile schema that has the name "profile" and the organization slug
+      const profileSchema = await ctx.db.formSchema.findFirst({
+        where: { name: "profile", organization: { slug: input.slug } },
+      });
+      return profileSchema;
     }),
 });
