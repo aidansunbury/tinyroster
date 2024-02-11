@@ -13,33 +13,40 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { FormSchemaItem } from "~/lib/types";
+import { formSchemaItemValidator } from "~/lib/validation/dynamicFormValidators";
+import { createZodSchema } from "~/lib/validation/validationHelpers";
+import { defaultProfileSchema } from "~/lib/validators";
 import { api } from "~/trpc/react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "@prisma/client";
+import { FormSchema, User } from "@prisma/client";
 
-const FormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
-  }),
-  slug: z.string(),
-  email: z.string().email(),
-});
-
+// TODO the form now properly submits, needs more thorough testing, now just needs to actually fetch the form entry
 export function ProfileForm({
   user,
   profileSchema,
 }: {
   user: User;
-  profileSchema: any;
+  profileSchema: FormSchema;
 }) {
+  console.log(profileSchema.schema);
+  // Get proper type safety for the form schema
+  const parsedSchema = formSchemaItemValidator.parse(profileSchema.schema);
+
+  // Create a zod schema from the default profile schema and the parsed schema
+  const FormSchema = z.object({
+    ...defaultProfileSchema,
+    ...createZodSchema(parsedSchema),
+  });
+
   const defaults = {
     name: user.name,
     slug: user.slug,
     email: user.email,
   };
 
-  for (const field of profileSchema.schema) {
+  for (const field of parsedSchema) {
     defaults[field.name] = "";
   }
 
@@ -48,8 +55,36 @@ export function ProfileForm({
     defaultValues: defaults,
   });
 
+  const submit = api.user.submitForm.useMutation({
+    onSuccess: () => {
+      console.log("success");
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
+
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    console.log(data);
+    const customItems = [];
+
+    for (const field of parsedSchema) {
+      for (const key in data) {
+        if (key === field.name) {
+          customItems.push({
+            id: field.id,
+            value: data[key],
+          });
+        }
+      }
+    }
+    console.log(profileSchema);
+    console.log(customItems);
+    const result = submit.mutate({
+      form: profileSchema,
+      entries: customItems,
+    });
+
+    console.log(result);
   }
 
   return (
@@ -100,7 +135,7 @@ export function ProfileForm({
             </FormItem>
           )}
         />
-        {profileSchema.schema.map((field: any) => {
+        {parsedSchema.map((field: FormSchemaItem) => {
           return (
             <FormField
               control={form.control}

@@ -1,9 +1,12 @@
-export type InputOptions =
-  | "text"
-  | "boolean"
-  | "datetime"
-  | "select"
-  | "multiselect";
+export const InputOptionsArray = [
+  "text",
+  "boolean",
+  "datetime",
+  "select",
+  "multiselect",
+] as const;
+
+export type InputOptions = (typeof InputOptionsArray)[number];
 
 export type FormSchemaItem = {
   id: string;

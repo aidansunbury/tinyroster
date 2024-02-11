@@ -18,6 +18,10 @@ export default async function Profile({
     slug: params.organization,
   });
 
+  if (!schema) {
+    throw new Error("Profile schema not found");
+  }
+
   return (
     <div className="flex w-full justify-center">
       <div className="w-8/12 space-y-3 first-line:border">

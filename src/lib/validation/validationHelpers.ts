@@ -2,8 +2,8 @@ import { z } from "zod";
 
 import { FormSchemaItem } from "../types";
 
-//[{"id":"phone","name":"phone number","options":[],"required":false,"type":"text"}]
-
+// Returns a zod schema for the given form schema
+// Still needs the last z.object() call, but that allows it to be combined with other zod schemas
 export function createZodSchema(schema: FormSchemaItem[]) {
   const fields = {};
   for (const field of schema) {
@@ -25,5 +25,5 @@ export function createZodSchema(schema: FormSchemaItem[]) {
         break;
     }
   }
-  return z.object(fields);
+  return fields;
 }

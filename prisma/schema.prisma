@@ -153,8 +153,11 @@ model FormSchema {
     organizationId String       @unique
 }
 
+// Todo: eventually add a way to have multiple form entries of the same form from the same user, they should be uniquely identified by name
+// Example: submit a weekly survey every week, which are all based on the same schema, but are unique entries and can have different names
 model FormEntry {
     id        String     @id //Prefix fe_
+    title     String? // A title for the form entry, e.g. "Weekly Survey 1"
     form      FormSchema @relation("Form Entries", fields: [formId], references: [id])
     formId    String
     data      Json

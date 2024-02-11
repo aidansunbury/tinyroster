@@ -1,6 +1,10 @@
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
+  formEntryItemValidator,
+  formSchemaValidator,
+} from "~/lib/validation/dynamicFormValidators";
+import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
@@ -40,6 +44,45 @@ export const userRouter = createTRPCRouter({
         });
       }
       return user;
+    }),
+  // Todo move to a new router
+  // Only used for specifically submitting custom form items
+  // built in items such as use name, slug, etc. are handled by the update user mutation
+  submitForm: protectedProcedure
+    .input(
+      z.object({
+        form: formSchemaValidator,
+        entries: formEntryItemValidator,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const form = await db.formEntry.upsert({
+        where: {
+          id: input.form.id,
+        },
+        update: {
+          data: input.entries,
+        },
+        create: {
+          id: "fe_" + nanoid(),
+          formId: input.form.id,
+          data: input.entries,
+          userId: ctx.session.user.id,
+        },
+      });
+      console.log(form);
+      return form;
+    }),
+  // todo test this garbage code
+  getForm: protectedProcedure
+    .input(z.object({ formId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await db.formEntry.findFirst({
+        where: {
+          formId: input,
+          userId: ctx.session.user.id, // This eventually needs to change to the user who we are actually looking at
+        },
+      });
     }),
 });
 
